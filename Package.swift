@@ -1,4 +1,4 @@
-// swift-tools-version:4.0
+// swift-tools-version:4.2
 import PackageDescription
 
 let package = Package(
@@ -9,7 +9,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "https://github.com/wickwirew/Runtime.git", .revision("1e80c719ab1a53de9e176a2dcb594779150ffc5a")),
+        .package(url: "https://github.com/wickwirew/Runtime.git", .revision("40cdfbad9650512507c060824e1c4e9fc2ca721d")),
     ],
 
     targets: [
