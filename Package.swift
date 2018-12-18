@@ -9,7 +9,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "https://github.com/wickwirew/Runtime.git", .revision("40cdfbad9650512507c060824e1c4e9fc2ca721d")),
+        .package(url: "git@github.com:SportlabsTechnology/Runtime.git", .upToNextMinor(from: "1.1.0")),
     ],
 
     targets: [
