@@ -1,4 +1,4 @@
-// swift-tools-version:4.2
+// swift-tools-version:5.0
 import PackageDescription
 
 let package = Package(
@@ -9,7 +9,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "git@github.com:SportlabsTechnology/Runtime.git", .upToNextMinor(from: "1.1.0")),
+        .package(url: "git@github.com:SportlabsTechnology/Runtime.git", .upToNextMinor(from: "2.0.0")),
     ],
 
     targets: [
