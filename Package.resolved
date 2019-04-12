@@ -14,9 +14,9 @@
         "package": "Runtime",
         "repositoryURL": "git@github.com:SportlabsTechnology/Runtime.git",
         "state": {
-          "branch": null,
-          "revision": "4687a21c28bbbf728288e5dce0841a465ed0c2d0",
-          "version": "2.0.0"
+          "branch": "master",
+          "revision": "8868585090a498d9c39309f96b18a61f75a1f1d1",
+          "version": null
         }
       }
     ]

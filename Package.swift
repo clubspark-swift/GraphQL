@@ -9,7 +9,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "git@github.com:SportlabsTechnology/Runtime.git", .upToNextMinor(from: "2.0.0")),
+        .package(url: "git@github.com:SportlabsTechnology/Runtime.git", .branch("master")),
     ],
 
     targets: [
