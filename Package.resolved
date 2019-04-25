@@ -14,8 +14,8 @@
         "package": "Runtime",
         "repositoryURL": "git@github.com:SportlabsTechnology/Runtime.git",
         "state": {
-          "branch": "master",
-          "revision": "49433c66d7be2a0c340e5c81500a85a49e8b9a7a",
+          "branch": "nested-struct-crash",
+          "revision": "304fa5dec869e0c3862936f68846b3c59f00bc30",
           "version": null
         }
       }

@@ -9,7 +9,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "git@github.com:SportlabsTechnology/Runtime.git", .branch("master")),
+        .package(url: "git@github.com:SportlabsTechnology/Runtime.git", .branch("nested-struct-crash")),
     ],
 
     targets: [
