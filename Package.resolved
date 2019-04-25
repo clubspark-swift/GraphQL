@@ -12,7 +12,7 @@
       },
       {
         "package": "Runtime",
-        "repositoryURL": "git@github.com:SportlabsTechnology/Runtime.git",
+        "repositoryURL": "https://github.com/wickwirew/Runtime.git",
         "state": {
           "branch": "nested-struct-crash",
           "revision": "304fa5dec869e0c3862936f68846b3c59f00bc30",
