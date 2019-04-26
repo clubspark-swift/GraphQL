@@ -9,7 +9,7 @@ let package = Package(
     ],
 
     dependencies: [
-	.package(url: "https://github.com/wickwirew/Runtime.git", .branch("nested-struct-crash")),
+	.package(url: "https://github.com/wickwirew/Runtime.git", .upToNextMinor(from: "2.1.0")),
     ],
 
     targets: [
