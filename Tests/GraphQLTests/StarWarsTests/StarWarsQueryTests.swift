@@ -568,11 +568,11 @@ class StarWarsQueryTests : XCTestCase {
             fields: [
                 "nullableA": GraphQLField(
                     type: GraphQLTypeReference("A"),
-                    resolve: { _, _, _, eventLoopGroup, _ in eventLoopGroup.next().newSucceededFuture(result: [:]) }
+                    resolve: { _, _, _, eventLoopGroup, _ in eventLoopGroup.next().makeSucceededFuture([:]) }
                 ),
                 "nonNullA": GraphQLField(
                     type: GraphQLNonNull(GraphQLTypeReference("A")),
-                    resolve: { _, _, _, eventLoopGroup, _ in eventLoopGroup.next().newSucceededFuture(result: [:]) }
+                    resolve: { _, _, _, eventLoopGroup, _ in eventLoopGroup.next().makeSucceededFuture([:]) }
                 ),
                 "throws": GraphQLField(
                     type: GraphQLNonNull(GraphQLString),
@@ -592,7 +592,7 @@ class StarWarsQueryTests : XCTestCase {
             fields: [
                 "nullableA": GraphQLField(
                     type: A,
-                    resolve: { _, _, _, eventLoopGroup, _ in eventLoopGroup.next().newSucceededFuture(result: [:]) }
+                    resolve: { _, _, _, eventLoopGroup, _ in eventLoopGroup.next().makeSucceededFuture([:]) }
                 )
             ]
         )

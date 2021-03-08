@@ -161,7 +161,7 @@ let HumanType = try! GraphQLObjectType(
             description: "The friends of the human, or an empty list if they " +
             "have none.",
             resolve: { human, _, _, eventLoopGroup, _ in
-                return eventLoopGroup.next().newSucceededFuture(result: getFriends(character: human as! Human))
+                return eventLoopGroup.next().makeSucceededFuture(getFriends(character: human as! Human))
             }
         ),
         "appearsIn": GraphQLField(
@@ -220,7 +220,7 @@ let DroidType = try! GraphQLObjectType(
             type: GraphQLList(CharacterInterface),
             description: "The friends of the droid, or an empty list if they have none.",
             resolve: { droid, _, _, eventLoopGroup, _ in
-                return eventLoopGroup.next().newSucceededFuture(result: getFriends(character: droid as! Droid))
+                return eventLoopGroup.next().makeSucceededFuture(getFriends(character: droid as! Droid))
             }
         ),
         "appearsIn": GraphQLField(
@@ -279,7 +279,7 @@ let QueryType = try! GraphQLObjectType(
             ],
             resolve: { _, arguments, _, eventLoopGroup, _ in
                 let episode = Episode(arguments["episode"].string)
-                return eventLoopGroup.next().newSucceededFuture(result: getHero(episode: episode))
+                return eventLoopGroup.next().makeSucceededFuture(getHero(episode: episode))
             }
         ),
         "human": GraphQLField(
@@ -291,7 +291,7 @@ let QueryType = try! GraphQLObjectType(
                 )
             ],
             resolve: { _, arguments, _, eventLoopGroup, _ in
-                return eventLoopGroup.next().newSucceededFuture(result: getHuman(id: arguments["id"].string!))
+                return eventLoopGroup.next().makeSucceededFuture(getHuman(id: arguments["id"].string!))
             }
         ),
         "droid": GraphQLField(
@@ -303,7 +303,7 @@ let QueryType = try! GraphQLObjectType(
                 )
             ],
             resolve: { _, arguments, _, eventLoopGroup, _ in
-                return eventLoopGroup.next().newSucceededFuture(result: getDroid(id: arguments["id"].string!))
+                return eventLoopGroup.next().makeSucceededFuture(getDroid(id: arguments["id"].string!))
             }
         ),
     ]
