@@ -138,9 +138,7 @@ public struct SerialFieldExecutionStrategy: QueryFieldExecutionStrategy, Mutatio
             results[field.key] = result.map { $0 ?? Map.null }
         }
 
-        return results.flatten(on: exeContext.eventLoopGroup).map
-                
-        }
+        return results.flatten(on: exeContext.eventLoopGroup)
     }
 }
 
