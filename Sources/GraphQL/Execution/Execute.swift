@@ -1,6 +1,6 @@
 import Dispatch
-import Runtime
 import NIO
+import OrderedCollections
 
 /**
  * Terminology
@@ -98,8 +98,8 @@ public protocol FieldExecutionStrategy {
         parentType: GraphQLObjectType,
         sourceValue: Any,
         path: IndexPath,
-        fields: [String: [Field]]
-    ) throws -> Future<[String: Any]>
+        fields: OrderedDictionary<String, [Field]>
+    ) throws -> Future<OrderedDictionary<String, Any>>
 }
 
 public protocol MutationFieldExecutionStrategy: FieldExecutionStrategy {}
@@ -118,9 +118,9 @@ public struct SerialFieldExecutionStrategy: QueryFieldExecutionStrategy, Mutatio
         parentType: GraphQLObjectType,
         sourceValue: Any,
         path: IndexPath,
-        fields: [String: [Field]]
-    ) throws -> Future<[String: Any]> {
-        var results = [String: Future<Any>]()
+        fields: OrderedDictionary<String, [Field]>
+    ) throws -> Future<OrderedDictionary<String, Any>> {
+        var results = OrderedDictionary<String, Future<Any>>()
 
         try fields.forEach { field in
             let fieldASTs = field.value
@@ -170,15 +170,16 @@ public struct ConcurrentDispatchFieldExecutionStrategy: QueryFieldExecutionStrat
         parentType: GraphQLObjectType,
         sourceValue: Any,
         path: IndexPath,
-        fields: [String: [Field]]
-    ) throws -> Future<[String: Any]> {
+        fields: OrderedDictionary<String, [Field]>
+    ) throws -> Future<OrderedDictionary<String, Any>> {
         let resultsQueue = DispatchQueue(
             label: "\(dispatchQueue.label) results",
             qos: dispatchQueue.qos
         )
         
         let group = DispatchGroup()
-        var results: [String: Future<Any>] = [:]
+        // preserve field order by assigning to null and filtering later
+        var results: OrderedDictionary<String, Future<Any>?> = fields.mapValues { _ -> Future<Any>? in return nil }
         var err: Error? = nil
 
         fields.forEach { field in
@@ -214,7 +215,7 @@ public struct ConcurrentDispatchFieldExecutionStrategy: QueryFieldExecutionStrat
             throw error
         }
         
-        return results.flatten(on: exeContext.eventLoopGroup)
+        return results.compactMapValues({ $0 }).flatten(on: exeContext.eventLoopGroup)
     }
 
 }
@@ -324,7 +325,6 @@ func execute(
 //                errors: executeErrors,
 //                result: result
 //            )
-
             return result
         }
     } catch let error as GraphQLError {
@@ -418,9 +418,9 @@ func executeOperation(
     exeContext: ExecutionContext,
     operation: OperationDefinition,
     rootValue: Any
-) throws -> Future<[String: Any]> {
+) throws -> Future<OrderedDictionary<String, Any>> {
     let type = try getOperationRootType(schema: exeContext.schema, operation: operation)
-    var inputFields: [String : [Field]] = [:]
+    var inputFields: OrderedDictionary<String, [Field]> = [:]
     var visitedFragmentNames: [String : Bool] = [:]
 
     let fields = try collectFields(
@@ -495,9 +495,9 @@ func collectFields(
     exeContext: ExecutionContext,
     runtimeType: GraphQLObjectType,
     selectionSet: SelectionSet,
-    fields: inout [String: [Field]],
+    fields: inout OrderedDictionary<String, [Field]>,
     visitedFragmentNames: inout [String: Bool]
-) throws -> [String: [Field]] {
+) throws -> OrderedDictionary<String, [Field]> {
     var visitedFragmentNames = visitedFragmentNames
 
     for selection in selectionSet.selections {
@@ -594,7 +594,7 @@ func shouldIncludeNode(exeContext: ExecutionContext, directives: [Directive] = [
         let skip = try getArgumentValues(
             argDefs: GraphQLSkipDirective.args,
             argASTs: skipAST.arguments,
-            variableValues: exeContext.variableValues
+            variables: exeContext.variableValues
         )
 
         if skip["if"] == .bool(true) {
@@ -606,7 +606,7 @@ func shouldIncludeNode(exeContext: ExecutionContext, directives: [Directive] = [
         let include = try getArgumentValues(
             argDefs: GraphQLIncludeDirective.args,
             argASTs: includeAST.arguments,
-            variableValues: exeContext.variableValues
+            variables: exeContext.variableValues
         )
 
         if include["if"] == .bool(false) {
@@ -685,7 +685,7 @@ public func resolveField(
     let args = try getArgumentValues(
         argDefs: fieldDef.args,
         argASTs: fieldAST.arguments,
-        variableValues: exeContext.variableValues
+        variables: exeContext.variableValues
     )
 
     // The resolve func's optional third argument is a context value that
@@ -1110,7 +1110,7 @@ func completeObjectValue(
     }
 
     // Collect sub-fields to execute to complete this value.
-    var subFieldASTs: [String: [Field]] = [:]
+    var subFieldASTs: OrderedDictionary<String, [Field]> = [:]
     var visitedFragmentNames: [String: Bool] = [:]
 
     for fieldAST in fieldASTs {
@@ -1175,33 +1175,11 @@ func defaultResolve(
         return eventLoopGroup.next().makeSucceededFuture(value)
     }
 
-    guard let encodable = source as? Encodable else {
+    let mirror = Mirror(reflecting: source)
+    guard let value = mirror.getValue(named: info.fieldName) else {
         return eventLoopGroup.next().makeSucceededFuture(nil)
     }
-    
-    guard
-        let typeInfo = try? typeInfo(of: type(of: encodable)),
-        let property = try? typeInfo.property(named: info.fieldName)
-    else {
-        return eventLoopGroup.next().makeSucceededFuture(nil)
-    }
-    
-    guard let value = try? property.get(from: encodable) else {
-        return eventLoopGroup.next().makeSucceededFuture(nil)
-    }
-    
     return eventLoopGroup.next().makeSucceededFuture(value)
-    
-//    guard let any = try? AnyEncoder().encode(AnyEncodable(encodable)) else {
-//        return eventLoopGroup.next().newSucceededFuture(result: nil)
-//    }
-//
-//    guard let dictionary = any as? [String: Any] else {
-//        return eventLoopGroup.next().newSucceededFuture(result: nil)
-//    }
-//
-//    let value = dictionary[info.fieldName]
-//    return eventLoopGroup.next().newSucceededFuture(result: value)
 }
 
 /**

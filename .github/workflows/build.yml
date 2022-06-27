@@ -13,11 +13,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-10.15, ubuntu-16.04, ubuntu-18.04, ubuntu-20.04]
+        os: [macos-10.15, macos-latest, ubuntu-18.04, ubuntu-20.04]
     steps:
     - uses: actions/checkout@v2
     - name: Set code coverage path 
-      run: echo ::set-env name=codecov_path::$(swift test --show-codecov-path)
+      run: echo "codecov_path=$(swift test --show-codecov-path)" >> $GITHUB_ENV
     - name: Test and publish code coverage to Code Climate
       uses: paulofaria/codeclimate-action@master
       if: matrix.os == 'macos-10.15'

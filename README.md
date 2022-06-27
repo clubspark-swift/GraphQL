@@ -14,6 +14,24 @@ Looking for help? Find resources [from the community](http://graphql.org/communi
 
 This repo only contains the core GraphQL implementation. For a better experience when creating your GraphQL schema use [Graphiti](https://github.com/GraphQLSwift/Graphiti).
 
+## Encoding Results
+
+If you encode a `GraphQLResult` with an ordinary `JSONEncoder`, there are no guarantees that the field order will match the query, 
+violating the [GraphQL spec](https://spec.graphql.org/June2018/#sec-Serialized-Map-Ordering). To preserve this order, `GraphQLResult`
+should be encoded using the `GraphQLJSONEncoder` provided by this package.
+
+## Contributing
+
+Most of this repo mirrors the structure of the canonical GraphQL implementation written in Javascript/Typescript. If there is any feature missing, looking at the original code and "translating" it to Swift works, most of the time. For example:
+
+### Swift
+
+[/Sources/GraphQL/Language/AST.swift](https://github.com/GraphQLSwift/GraphQL/blob/master/Sources/GraphQL/Language/AST.swift)
+
+### Javascript/Typescript
+
+[/src/language/ast.js](https://github.com/graphql/graphql-js/blob/master/src/language/ast.js)
+
 
 ## License
 

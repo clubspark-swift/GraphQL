@@ -1,25 +1,24 @@
+import Foundation
+import OrderedCollections
+
 // MARK: MapError
 
 public enum MapError : Error {
     case incompatibleType
     case outOfBounds
     case valueNotFound
-    case notMapInitializable(Any.Type)
-    case notMapRepresentable(Any.Type)
-    case notMapDictionaryKeyInitializable(Any.Type)
-    case notMapDictionaryKeyRepresentable(Any.Type)
-    case cannotInitialize(type: Any.Type, from: Any.Type)
 }
 
 // MARK: Map
 
 public enum Map {
+    case undefined
     case null
     case bool(Bool)
     case number(Number)
     case string(String)
     case array([Map])
-    case dictionary([String: Map])
+    case dictionary(OrderedDictionary<String, Map>)
     
     public static func int(_ value: Int) -> Map {
         return .number(Number(value))
@@ -63,7 +62,7 @@ extension Map {
         self = .array(array)
     }
     
-    public init(_ dictionary: [String: Map]) {
+    public init(_ dictionary: OrderedDictionary<String, Map>) {
         self = .dictionary(dictionary)
     }
     
@@ -91,7 +90,7 @@ extension Map {
         self = array.map({ Map($0) }) ?? .null
     }
     
-    public init(_ dictionary: [String: Map]?) {
+    public init(_ dictionary: OrderedDictionary<String, Map>?) {
         self = dictionary.map({ Map($0) }) ?? .null
     }
 }
@@ -112,8 +111,8 @@ public func map(from value: Any?) throws -> Map {
     }
 
     if
-        let value = value as? [String: Any],
-        let dictionary: [String: Map] = try? value.reduce(into: [:], { result, pair in
+        let value = value as? OrderedDictionary<String, Any>,
+        let dictionary: OrderedDictionary<String, Map> = try? value.reduce(into: [:], { result, pair in
             result[pair.key] = try map(from: pair.value)
         })
     {
@@ -157,7 +156,7 @@ extension Map {
             self = .string(string)
         case let array as [Map]:
             self = .array(array)
-        case let dictionary as [String: Map]:
+        case let dictionary as OrderedDictionary<String, Map>:
             self = .dictionary(dictionary)
         default:
             throw MapError.incompatibleType
@@ -168,6 +167,13 @@ extension Map {
 // MARK: is<Type>
 
 extension Map {
+    public var isUndefined: Bool {
+        if case .undefined = self {
+            return true
+        }
+        return false
+    }
+    
     public var isNull: Bool {
         if case .null = self {
             return true
@@ -209,6 +215,8 @@ extension Map {
 extension Map {
     public var typeDescription: String {
         switch self {
+        case .undefined:
+            return "undefined"
         case .null:
             return "null"
         case .bool:
@@ -229,27 +237,27 @@ extension Map {
 
 extension Map {
     public var bool: Bool? {
-        return try? get()
+        return try? boolValue()
     }
     
     public var int: Int? {
-        return try? (get() as Number).intValue
+        return try? intValue()
     }
 
     public var double: Double? {
-        return try? (get() as Number).doubleValue
+        return try? doubleValue()
     }
 
     public var string: String? {
-        return try? get()
+        return try? stringValue()
     }
 
     public var array: [Map]? {
-        return try? get()
+        return try? arrayValue()
     }
 
-    public var dictionary: [String: Map]? {
-        return try? get()
+    public var dictionary: OrderedDictionary<String, Map>? {
+        return try? dictionaryValue()
     }
 }
 
@@ -262,6 +270,9 @@ extension Map {
         }
 
         switch self {
+        case .undefined:
+            return false
+            
         case .null:
             return false
 
@@ -288,7 +299,7 @@ extension Map {
 
     public func intValue(converting: Bool = false) throws -> Int {
         guard converting else {
-            return try get()
+            return try (get() as Number).intValue
         }
 
         switch self {
@@ -312,7 +323,7 @@ extension Map {
 
     public func doubleValue(converting: Bool = false) throws -> Double {
         guard converting else {
-            return try get()
+            return try (get() as Number).doubleValue
         }
 
         switch self {
@@ -340,6 +351,9 @@ extension Map {
         }
 
         switch self {
+        case .undefined:
+            return "undefined"
+            
         case .null:
             return "null"
 
@@ -377,7 +391,7 @@ extension Map {
         }
     }
 
-    public func dictionaryValue(converting: Bool = false) throws -> [String: Map] {
+    public func dictionaryValue(converting: Bool = false) throws -> OrderedDictionary<String, Map> {
         guard converting else {
             return try get()
         }
@@ -492,7 +506,7 @@ extension Map {
                     if let existingDictionary = dictionary[key]?.dictionary,
                         let newDictionary = newValue.dictionary,
                         merging {
-                        var combinedDictionary: [String: Map] = [:]
+                        var combinedDictionary: OrderedDictionary<String, Map> = [:]
 
                         for (key, value) in existingDictionary {
                             combinedDictionary[key] = value
@@ -622,8 +636,20 @@ extension Map : Codable {
         else if let array = try? container.decode([Map].self) {
             self = .array(array)
         }
-            
-        else if let dictionary = try? container.decode([String: Map].self) {
+        
+        else if let _ = try? container.decode([String: Map].self) {
+            // Override OrderedDictionary default (unkeyed alternating key-value)
+            // Instead decode as a keyed container (like normal Dictionary) but use the order of the input
+            let container = try decoder.container(keyedBy: _DictionaryCodingKey.self)
+            var orderedDictionary: OrderedDictionary<String, Map> = [:]
+            for key in container.allKeys {
+                let value = try container.decode(Map.self, forKey: key)
+                orderedDictionary[key.stringValue] = value
+            }
+            self = .dictionary(orderedDictionary)
+        }
+        
+        else if let dictionary = try? container.decode(OrderedDictionary<String, Map>.self) {
             self = .dictionary(dictionary)
         }
             
@@ -636,6 +662,8 @@ extension Map : Codable {
         var container = encoder.singleValueContainer()
         
         switch self {
+        case .undefined:
+            fatalError("undefined values should have been excluded from encoding")
         case .null:
             try container.encodeNil()
         case let .bool(value):
@@ -647,8 +675,34 @@ extension Map : Codable {
         case let .array(array):
             try container.encode(array)
         case let .dictionary(dictionary):
-            try container.encode(dictionary)
+            // Override OrderedDictionary default (unkeyed alternating key-value)
+            // Instead decode as a keyed container (like normal Dictionary) in the order of our OrderedDictionary
+            // Note that `JSONEncoder` will ignore this because it uses `Dictionary` underneath. Instead, use `GraphQLJSONEncoder`.
+            var container = encoder.container(keyedBy: _DictionaryCodingKey.self)
+            for (key, value) in dictionary {
+                if !value.isUndefined {
+                    let codingKey = _DictionaryCodingKey(stringValue: key)!
+                    try container.encode(value, forKey: codingKey)
+                }
+            }
         }
+    }
+    
+    /// A wrapper for dictionary keys which are Strings or Ints.
+    /// This is copied from Swift core: https://github.com/apple/swift/blob/256a9c5ad96378daa03fa2d5197b4201bf16db27/stdlib/public/core/Codable.swift#L5508
+    internal struct _DictionaryCodingKey: CodingKey {
+      internal let stringValue: String
+      internal let intValue: Int?
+
+      internal init?(stringValue: String) {
+        self.stringValue = stringValue
+        self.intValue = Int(stringValue)
+      }
+
+      internal init?(intValue: Int) {
+        self.stringValue = "\(intValue)"
+        self.intValue = intValue
+      }
     }
 }
 // MARK: Equatable
@@ -657,6 +711,8 @@ extension Map : Equatable {}
 
 public func == (lhs: Map, rhs: Map) -> Bool {
     switch (lhs, rhs) {
+    case (.undefined, .undefined):
+        return true
     case (.null, .null):
         return true
     case let (.bool(l), .bool(r)) where l == r:
@@ -679,6 +735,8 @@ public func == (lhs: Map, rhs: Map) -> Bool {
 extension Map : Hashable {
     public func hash(into hasher: inout Hasher) {
         switch self {
+        case .undefined:
+            hasher.combine(0)
         case .null:
             hasher.combine(0)
         case let .bool(value):
@@ -743,7 +801,7 @@ extension Map : ExpressibleByArrayLiteral {
 
 extension Map : ExpressibleByDictionaryLiteral {
     public init(dictionaryLiteral elements: (String, Map)...) {
-        var dictionary = [String: Map](minimumCapacity: elements.count)
+        var dictionary = OrderedDictionary<String, Map>(minimumCapacity: elements.count)
         
         for (key, value) in elements {
             dictionary[key] = value
@@ -805,6 +863,8 @@ extension Map {
 
         func serialize(map: Map) -> String {
             switch map {
+            case .undefined:
+                return "undefined"
             case .null:
                 return "null"
             case let .bool(value):
@@ -852,15 +912,19 @@ extension Map {
             }
         }
 
-        func serialize(dictionary: [String: Map]) -> String {
+        func serialize(dictionary: OrderedDictionary<String, Map>) -> String {
             var string = "{"
             var index = 0
 
             if debug {
                 indentLevel += 1
             }
+            
+            let filtered = dictionary.filter({ item in
+                !item.value.isUndefined
+            })
 
-            for (key, value) in dictionary.sorted(by: {$0.0 < $1.0}) {
+            for (key, value) in filtered.sorted(by: {$0.0 < $1.0}) {
                 if debug {
                     string += "\n"
                     string += indent()
@@ -869,7 +933,7 @@ extension Map {
                     string += escape(key) + ":" + serialize(map: value)
                 }
 
-                if index != dictionary.count - 1 {
+                if index != filtered.count - 1 {
                     if debug {
                         string += ", "
                     } else {

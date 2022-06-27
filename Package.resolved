@@ -2,21 +2,12 @@
   "object": {
     "pins": [
       {
-        "package": "CRuntime",
-        "repositoryURL": "https://github.com/wickwirew/CRuntime.git",
+        "package": "swift-collections",
+        "repositoryURL": "https://github.com/apple/swift-collections",
         "state": {
           "branch": null,
-          "revision": "95f911318d8c885f6fc05e971471f94adfd39405",
-          "version": "2.1.2"
-        }
-      },
-      {
-        "package": "Runtime",
-        "repositoryURL": "https://github.com/wickwirew/Runtime.git",
-        "state": {
-          "branch": null,
-          "revision": "61c9776f47d2951bdc562486ad348e5e1ca2e180",
-          "version": "2.1.1"
+          "revision": "48254824bb4248676bf7ce56014ff57b142b77eb",
+          "version": "1.0.2"
         }
       },
       {
@@ -24,8 +15,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio.git",
         "state": {
           "branch": null,
-          "revision": "120acb15c39aa3217e9888e515de160378fbcc1e",
-          "version": "2.18.0"
+          "revision": "51c3fc2e4a0fcdf4a25089b288dd65b73df1b0ef",
+          "version": "2.37.0"
         }
       }
     ]

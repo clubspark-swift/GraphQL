@@ -1,4 +1,5 @@
 import Foundation
+import OrderedCollections
 
 public struct MapSerialization {
     static func map(with object: NSObject) throws -> Map {
@@ -13,14 +14,13 @@ public struct MapSerialization {
             let array: [Map] = try array.map { value in
                 try self.map(with: value as! NSObject)
             }
-            
             return .array(array)
         case let dictionary as NSDictionary:
-            let dictionary: [String : Map] = try dictionary.reduce(into: [:]) { (dictionary, pair) in
+            // Extract from an unordered dictionary, using NSDictionary extraction order
+            let orderedDictionary: OrderedDictionary<String, Map> = try dictionary.reduce(into: [:]) { (dictionary, pair) in
                 dictionary[pair.key as! String] = try self.map(with: pair.value as! NSObject)
             }
-            
-            return .dictionary(dictionary)
+            return .dictionary(orderedDictionary)
         default:
             throw EncodingError.invalidValue(
                 object,
@@ -34,6 +34,8 @@ public struct MapSerialization {
     
     static func object(with map: Map) throws -> NSObject {
         switch map {
+        case .undefined:
+            fatalError("undefined values should have been excluded from serialization")
         case .null:
             return NSNull()
         case let .bool(value):
@@ -45,7 +47,14 @@ public struct MapSerialization {
         case let .array(array):
             return try array.map({ try object(with: $0) }) as NSArray
         case let .dictionary(dictionary):
-            return try dictionary.mapValues({ try object(with: $0) }) as NSDictionary
+            // Coerce to an unordered dictionary
+            var unorderedDictionary: [String: NSObject] = [:]
+            for (key, value) in dictionary {
+                if !value.isUndefined {
+                    try unorderedDictionary[key] = object(with: value)
+                }
+            }
+            return unorderedDictionary as NSDictionary
         }
     }
 }
