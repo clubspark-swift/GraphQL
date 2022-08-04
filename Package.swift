@@ -9,7 +9,7 @@ let package = Package(
     ],
 
     dependencies: [
-        .package(url: "https://github.com/wickwirew/Runtime.git", .upToNextMinor(from: "2.1.0")),
+        .package(url: "https://github.com/wickwirew/Runtime.git", .upToNextMinor(from: "2.2.0")),
 
         // ⏱ Promises and reactive-streams in Swift built for high-performance and scalability.
 //        .package(url: "https://github.com/apple/swift-nio.git", .upToNextMajor(from: "1.14.1"))
